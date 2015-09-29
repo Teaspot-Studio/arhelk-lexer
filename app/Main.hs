@@ -12,9 +12,6 @@ import Arhelk.Lexer.Grammar
 import Arhelk.Lexer.Language
 import TextShow 
 
-parseInput :: LexerLanguage -> Text -> Either ParseError [Token]
-parseInput l  input = parse (arhelkLexer l) "(unknown)" input
-
 bibleArm :: Text
 bibleArm = "Ի սկզբանէ Աստուած ստեղծեց երկինքն ու երկիրը։ Երկիրն անձեւ ու անկազմ էր, խաւար էր տիրում անհունի վրայ, եւ Աստծու հոգին շրջում էր ջրերի վրայ։ Եւ Աստուած ասաց. «Թող լոյս լինի»։ Եւ լոյս եղաւ։ Աստուած տեսաւ, որ լոյսը լաւ է, եւ Աստուած լոյսը բաժանեց խաւարից։ Աստուած լոյսը կոչեց ցերեկ, իսկ խաւարը կոչեց գիշեր։ Եւ եղաւ երեկոյ, եւ եղաւ առաւօտ՝ օր առաջին։ Աստուած ասաց. «Թող տարածութիւն առաջանայ ջրերի միջեւ, եւ ջրերը թող բաժանուեն ջրերից»։ Եւ եղաւ այդպէս։ Աստուած ստեղծեց տարածութիւնը, որով Աստուած տարածութեան ներքեւում եղած ջրերը անջրպետեց տարածութեան վրայ եղած ջրերից։ ։։"
 
@@ -54,8 +51,8 @@ esperantoLang = defaultLexer {
 
 main :: IO ()
 main = do
-  let es = parseInput armenianLang bibleArm
-  -- let es = parseInput esperantoLang bibleEsp
+  let es = arhelkLexerParse armenianLang bibleArm
+  -- let es = arhelkLexerParse esperantoLang bibleEsp
   case es of 
     Left err -> print err
     Right res -> putStrLn $ T.unpack $ T.unlines $ showt <$> res

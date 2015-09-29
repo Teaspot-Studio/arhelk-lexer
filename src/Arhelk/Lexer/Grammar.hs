@@ -1,5 +1,9 @@
 module Arhelk.Lexer.Grammar(
     arhelkLexer
+  , arhelkLexerParse
+  , arhelkLexerParseFile
+  -- | Testing
+  , prop_parseSingleWord
   ) where 
 
 import Arhelk.Lexer.Language
@@ -7,8 +11,9 @@ import Arhelk.Lexer.Token
 import Control.Monad 
 import Data.Monoid
 import Data.Text as T 
+import qualified Data.Text.IO as T
 import Text.Parsec 
-import Text.Parsec.Text 
+import Text.Parsec.Text
 
 -- | Token or space, used only internaly
 data SpacedToken = NoSpace Token | Space 
@@ -74,3 +79,16 @@ arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` space
       return $ pres ++ gluts
 
     single t = [t]
+
+-- | Parses given input
+arhelkLexerParse :: LexerLanguage -> Text -> Either ParseError [Token]
+arhelkLexerParse l = parse (arhelkLexer l) "(stdin)"
+
+-- | Parses given file
+arhelkLexerParseFile :: LexerLanguage -> FilePath -> IO (Either ParseError [Token])
+arhelkLexerParseFile l n = arhelkLexerParse l <$> T.readFile n 
+
+prop_parseSingleWord :: SomeWord -> Bool
+prop_parseSingleWord (SomeWord (Word t1)) = case arhelkLexerParse defaultLexer t1 of 
+  Right [Word t2] -> t1 == t2
+  _ -> False

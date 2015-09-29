@@ -1,9 +1,14 @@
 module Arhelk.Lexer.Token(
     Token(..)
+  -- | Testing
+  , SomeWord(..)
   ) where
 
+import Data.Maybe 
 import Data.Monoid
 import Data.Text as T
+import Test.QuickCheck 
+import Test.QuickCheck.Instances
 import TextShow 
 
 -- | Kinds of tokens in generic lexer
@@ -48,3 +53,18 @@ instance TextShow Token where
     Citation -> "CI"
     Dash -> "DA"
     Quotation t -> "QS\n" <> unlinesB (showb <$> t) <> "QE"
+
+newtype SomeWord = SomeWord Token
+  deriving Show 
+
+instance Arbitrary SomeWord where 
+  arbitrary = SomeWord . Word <$> suchThat arbitrary cond
+    where 
+      cond :: Text -> Bool
+      cond a = not (T.null a) && and ((not . (a `contains`)) <$> punctuation)
+
+      contains :: Text -> Char -> Bool
+      contains t c = isJust $ T.find (== c) t
+
+      punctuation :: [Char]
+      punctuation = " \n\t\r`~!@#$%^&*()-=_+<>|\\/?[]{}'\";:։․.,«»“”„“‘’‹›"

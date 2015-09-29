@@ -10,38 +10,61 @@ import Data.Text as T
 import Text.Parsec 
 import Text.Parsec.Text 
 
-arhelkLexer :: LexerLanguage -> Parser [Token]
-arhelkLexer lang@(LexerLanguage {..}) = Prelude.concat <$> someToken `sepBy` spaces
-  where 
-    someToken :: Parser [Token]
-    someToken = choice $ (many1 <$> lexerPunctuation) ++
-      (fmap (aglutted $ choice lexerPunctuation) [single <$> quotation, wordWith lexerInwordMarks])
+-- | Token or space, used only internaly
+data SpacedToken = NoSpace Token | Space 
+  deriving Show 
 
-    wordWith :: [Parser Token] -> Parser [Token]
+-- | Converts to token with space
+spaced :: Token -> SpacedToken
+spaced = NoSpace
+
+-- | Concats and removes all space tokens
+concatSpaced :: [[SpacedToken]] -> [Token]
+concatSpaced = cutSpace . Prelude.concat 
+  where 
+    cutSpace [] = []
+    cutSpace (NoSpace t : xs) = t : (cutSpace xs)
+    cutSpace (Space : xs) = cutSpace xs 
+
+-- | Generic lexer that is customized with given language specification.
+-- The lexer cuts the input into words, detects punctuation and quoatation (including nested quotes). 
+arhelkLexer :: LexerLanguage -> Parser [Token]
+arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spaces
+  where 
+    punctuation = fmap spaced <$> lexerPunctuation
+    inWords = fmap spaced <$> lexerInwordMarks
+
+    someToken :: Parser [SpacedToken]
+    someToken = choice $ (many1 <$> punctuation) ++
+      (fmap (aglutted $ choice punctuation) [single <$> quotation, wordWith inWords])
+
+    wordWith :: [Parser SpacedToken] -> Parser [SpacedToken]
     wordWith ps = do 
       w <- many (choice $ ps++[word])
       return $ supplantTokens w
 
     -- | Supplant non-word tokens within word tokens
-    supplantTokens :: [Token] -> [Token]
+    supplantTokens :: [SpacedToken] -> [SpacedToken]
     supplantTokens [] = []
     supplantTokens [t] = [t]
-    supplantTokens ((Word t1):(Word t2):xs) = (Word $ t1 <> t2):(supplantTokens xs)
-    supplantTokens ((Word t1):t2:(Word t3):xs) = (Word $ t1 <> t3):t2:(supplantTokens xs)
+    supplantTokens ((NoSpace (Word t1)):(NoSpace (Word t2)):xs) = (NoSpace $ Word $ t1 <> t2):(supplantTokens xs)
+    supplantTokens ((NoSpace (Word t1)):t2:(NoSpace (Word t3)):xs) = (NoSpace $ Word $ t1 <> t3):t2:(supplantTokens xs)
     supplantTokens (t1:t2:xs) = t1:t2:(supplantTokens xs)
 
-    word :: Parser Token
-    word = fmap (Word . T.pack) $ many1 $ do 
+    word :: Parser SpacedToken
+    word = fmap (NoSpace . Word . T.pack) $ many1 $ do 
       let 
         testQuotation (b, e) = do -- Interested in start and end chars only
           _ <- b <|> e 
-          return $ Quotation []
-      notFollowedBy (choice $ spaces : lexerPunctuation ++ fmap testQuotation lexerQuotation)
+          return $ NoSpace $ Quotation []
+      notFollowedBy (choice $ spaces : punctuation ++ fmap testQuotation lexerQuotation)
       anyChar
 
+    spaces :: Parser SpacedToken
     spaces = oneOf (T.unpack lexerSpaces) >> return Space
 
-    quotation = Quotation <$> choice (mkQuot <$> lexerQuotation)
+    quotation :: Parser SpacedToken
+    quotation = NoSpace . Quotation <$> choice (mkQuot <$> lexerQuotation)
       where mkQuot (b, e) = between b e $ arhelkLexer lang
 
     -- | Parser with followed tokens without spaces

@@ -16,7 +16,6 @@ data Token =
   | Comma
   | Semicolon
   | Citation
-  | Space -- TODO: remove this
   | Quotation [Token]
   -- | TODO: direct speech
   deriving Show

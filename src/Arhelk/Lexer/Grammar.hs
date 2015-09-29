@@ -27,7 +27,7 @@ concatSpaced = cutSpace . Prelude.concat
     cutSpace (Space : xs) = cutSpace xs 
 
 -- | Generic lexer that is customized with given language specification.
--- The lexer cuts the input into words, detects punctuation and quoatation (including nested quotes). 
+-- The lexer cuts the input into words, detects punctuation and quotation (including nested quotes). 
 arhelkLexer :: LexerLanguage -> Parser [Token]
 arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spaces
   where 

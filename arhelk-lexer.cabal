@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Arhelk.Lexer.Token
+                       Arhelk.Lexer.Grammar
   build-depends:       base >= 4.7 && < 5
                      , text
                      , text-show

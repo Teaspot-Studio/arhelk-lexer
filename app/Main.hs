@@ -48,6 +48,7 @@ esperantoLang = defaultLexer {
       , char ';' >> return Semicolon
       , char '!' >> return ExclamationMark
       , char '?' >> return QuestionMark
+      , (char '—' <|> string "--") >> return Dash
       ]
   }
 

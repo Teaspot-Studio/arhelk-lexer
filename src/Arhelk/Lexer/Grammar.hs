@@ -32,8 +32,11 @@ arhelkLexer lang@(LexerLanguage {..}) = Prelude.concat <$> someToken `sepBy` spa
 
     word :: Parser Token
     word = fmap (Word . T.pack) $ many1 $ do 
-      let quotationChars = (\(b,e) -> (b <|> e) >> return (Quotation [])) <$> lexerQuotation
-      notFollowedBy (choice $ spaces : lexerPunctuation ++ quotationChars)
+      let 
+        testQuotation (b, e) = do -- Interested in start and end chars only
+          _ <- b <|> e 
+          return $ Quotation []
+      notFollowedBy (choice $ spaces : lexerPunctuation ++ fmap testQuotation lexerQuotation)
       anyChar
 
     spaces = oneOf (T.unpack lexerSpaces) >> return Space

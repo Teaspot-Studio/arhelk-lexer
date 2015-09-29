@@ -12,6 +12,8 @@ import Control.Monad
 import Data.Monoid
 import Data.Text as T 
 import qualified Data.Text.IO as T
+import Test.QuickCheck 
+import Test.QuickCheck.Modifiers
 import Text.Parsec 
 import Text.Parsec.Text
 
@@ -87,6 +89,19 @@ arhelkLexerParse l = parse (arhelkLexer l) "(stdin)"
 -- | Parses given file
 arhelkLexerParseFile :: LexerLanguage -> FilePath -> IO (Either ParseError [Token])
 arhelkLexerParseFile l n = arhelkLexerParse l <$> T.readFile n 
+
+newtype SpaceText = SpaceText Text
+
+instance Arbitrary SpaceText where 
+  arbitrary = SpaceText <$> do 
+    NonNegative n <- arbitrary 
+    str <- replicateM n $ elements " \t\r\n"
+    return $ T.pack str
+
+prop_emptyWord :: SpaceText -> Bool 
+prop_emptyWord (SpaceText spaces) = case arhelkLexerParse defaultLexer spaces of 
+  Right [] -> True
+  _ -> False
 
 prop_parseSingleWord :: SomeWord -> Bool
 prop_parseSingleWord (SomeWord (Word t1)) = case arhelkLexerParse defaultLexer t1 of 

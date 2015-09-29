@@ -25,6 +25,7 @@ library
   default-language:    Haskell2010
   extensions:          OverloadedStrings
                        FlexibleContexts
+                       RecordWildCards
 
 executable arhelk-lexer
   hs-source-dirs:      app

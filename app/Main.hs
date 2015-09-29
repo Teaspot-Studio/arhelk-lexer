@@ -33,18 +33,28 @@ armenianLang = defaultLexer {
   , lexerInwordMarks = inwords
   }
   where
-    question = char '՞' >> return QuestionMark
-    exclamation = char '՜' >> return ExclamationMark
-    motiveMark = char '՛' >> return MotiveMark
     inwords = [
-        question
-      , exclamation
-      , motiveMark
+        char '՞' >> return QuestionMark
+      , char '՜' >> return ExclamationMark
+      , char '՛' >> return MotiveMark
       ]
+
+esperantoLang :: LexerLanguage
+esperantoLang = defaultLexer {
+    lexerPunctuation = [
+        char '.' >> return EndSentence
+      , char ',' >> return Comma 
+      , char ':' >> return Citation
+      , char ';' >> return Semicolon
+      , char '!' >> return ExclamationMark
+      , char '?' >> return QuestionMark
+      ]
+  }
 
 main :: IO ()
 main = do
   let es = parseInput armenianLang bibleArm
+  -- let es = parseInput esperantoLang bibleEsp
   case es of 
     Left err -> print err
     Right res -> putStrLn $ T.unpack $ T.unlines $ showt <$> res

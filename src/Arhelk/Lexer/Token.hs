@@ -14,6 +14,7 @@ data Token =
   | MotiveMark
   | DependentMark
   | Comma
+  | Semicolon
   | Citation
   | Space -- TODO: remove this
   | Quotation [Token]
@@ -29,5 +30,6 @@ instance TextShow Token where
     MotiveMark -> "M"
     DependentMark -> "D"
     Comma -> "CO"
+    Semicolon -> "S"
     Citation -> "CI"
     Quotation t -> "QS\n" <> unlinesB (showb <$> t) <> "QE"

@@ -8,7 +8,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text as T
 import Test.QuickCheck 
-import Test.QuickCheck.Instances
+import Test.QuickCheck.Instances()
 import TextShow 
 
 -- | Kinds of tokens in generic lexer
@@ -53,7 +53,8 @@ instance TextShow Token where
     Citation -> "CI"
     Dash -> "DA"
     Quotation t -> "QS\n" <> unlinesB (showb <$> t) <> "QE"
-
+    DirectSpeech t -> "DS\n" <> unlinesB (showb <$> t) <> "DE"
+    
 newtype SomeWord = SomeWord Token
   deriving Show 
 

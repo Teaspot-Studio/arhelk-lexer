@@ -15,7 +15,6 @@ import Data.Monoid
 import Data.Text as T 
 import qualified Data.Text.IO as T
 import Test.QuickCheck 
-import Test.QuickCheck.Modifiers
 import Text.Parsec 
 import Text.Parsec.Text
 
@@ -38,7 +37,7 @@ concatSpaced = cutSpace . Prelude.concat
 -- | Generic lexer that is customized with given language specification.
 -- The lexer cuts the input into words, detects punctuation and quotation (including nested quotes). 
 arhelkLexer :: LexerLanguage -> Parser [Token]
-arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spaces
+arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spacing
   where 
     punctuation = fmap spaced <$> lexerPunctuation
     inWords = fmap spaced <$> lexerInwordMarks
@@ -66,11 +65,11 @@ arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` space
         testQuotation (b, e) = do -- Interested in start and end chars only
           _ <- b <|> e 
           return $ NoSpace $ Quotation []
-      notFollowedBy (choice $ spaces : punctuation ++ fmap testQuotation lexerQuotation)
+      notFollowedBy (choice $ spacing : punctuation ++ fmap testQuotation lexerQuotation)
       anyChar
 
-    spaces :: Parser SpacedToken
-    spaces = oneOf (T.unpack lexerSpaces) >> return Space
+    spacing :: Parser SpacedToken
+    spacing = oneOf (T.unpack lexerSpaces) >> return Space
 
     quotation :: Parser SpacedToken
     quotation = NoSpace . Quotation <$> choice (mkQuot <$> lexerQuotation)
@@ -94,7 +93,7 @@ arhelkLexerParseFile l n = arhelkLexerParse l <$> T.readFile n
 
 newtype SpaceText = SpaceText Text
   deriving Show 
-  
+
 instance Arbitrary SpaceText where 
   arbitrary = SpaceText <$> do 
     NonNegative n <- arbitrary 
@@ -102,7 +101,7 @@ instance Arbitrary SpaceText where
     return $ T.pack str
 
 prop_emptyWord :: SpaceText -> Bool 
-prop_emptyWord (SpaceText spaces) = case arhelkLexerParse defaultLexer spaces of 
+prop_emptyWord (SpaceText t) = case arhelkLexerParse defaultLexer t of 
   Right [] -> True
   _ -> False
 
@@ -110,13 +109,14 @@ prop_parseSingleWord :: SomeWord -> Bool
 prop_parseSingleWord (SomeWord (Word t1)) = case arhelkLexerParse defaultLexer t1 of 
   Right [Word t2] -> t1 == t2
   _ -> False
+prop_parseSingleWord _ = True
 
 prop_parseWords :: [SomeWord] -> SpaceText -> Bool
-prop_parseWords ws (SpaceText spaces) = case arhelkLexerParse defaultLexer str of 
+prop_parseWords ws (SpaceText spacing) = case arhelkLexerParse defaultLexer str of 
   Right ws2 -> let
     ws2' = fmap (\(Word t) -> t) ws2
     in ws1 == ws2'
   _ -> False
   where 
-    str = T.intercalate (" " <> spaces) $ (\(SomeWord (Word t)) -> t) <$> ws
+    str = T.intercalate (" " <> spacing) $ (\(SomeWord (Word t)) -> t) <$> ws
     ws1 = (\(SomeWord (Word t)) -> t) <$> ws

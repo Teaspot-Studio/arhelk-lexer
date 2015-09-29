@@ -2,10 +2,7 @@
 module Main where
 
 import Data.Text as T
-import Text.Parsec.Text
 import Text.Parsec 
-import Data.Monoid 
-import Control.Monad 
 
 import Arhelk.Lexer.Token
 import Arhelk.Lexer.Grammar

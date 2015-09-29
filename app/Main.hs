@@ -9,6 +9,7 @@ import Control.Monad
 
 import Arhelk.Lexer.Token
 import Arhelk.Lexer.Grammar
+import Arhelk.Lexer.Language
 import TextShow 
 
 parseInput :: Text -> Either ParseError [Token]
@@ -19,6 +20,27 @@ bibleArm = "Ի սկզբանէ Աստուած ստեղծեց երկինքն ու 
 
 bibleEsp :: Text 
 bibleEsp = "En la komenco Dio kreis la cxielon kaj la teron. Kaj la tero estis senforma kaj dezerta, kaj mallumo estis super la abismo; kaj la spirito de Dio sxvebis super la akvo. Kaj Dio diris: Estu lumo; kaj farigxis lumo. Kaj Dio vidis la lumon, ke gxi estas bona; kaj Dio apartigis la lumon de la mallumo. Kaj Dio nomis la lumon Tago, kaj la mallumon Li nomis Nokto. Kaj estis vespero, kaj estis mateno, unu tago."
+
+armLang :: LexerLanguage 
+armLang = defaultLexer {
+    lexerPunctuation = [
+        char '։' >> return EndSentence
+      , char ',' >> return Comma
+      , char '․' >> return Citation
+      , char '՝' >> return DependentMark
+      ] 
+      ++ inwords
+  , lexerInwordMarks = inwords
+  }
+  where
+    question = char '՞' >> return QuestionMark
+    exclamation = char '՜' >> return ExclamationMark
+    motiveMark = char '՛' >> return MotiveMark
+    inwords = [
+        question
+      , exclamation
+      , motiveMark
+      ]
 
 main :: IO ()
 main = do

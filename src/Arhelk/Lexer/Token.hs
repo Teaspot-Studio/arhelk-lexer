@@ -10,18 +10,23 @@ data Token =
     Word Text 
   | EndSentence
   | QuestionMark
+  | ExclamationMark
+  | MotiveMark
   | DependentMark
   | Comma
   | Citation
-  | Space
+  | Space -- TODO: remove this
   | Quotation [Token]
+  -- | TODO: direct speech
   deriving Show
 
 instance TextShow Token where 
   showb tok = case tok of 
     Word t -> "W" <> showbSpace <> fromText t
-    EndSentence -> "E"
+    EndSentence -> "ES"
     QuestionMark -> "Q"
+    ExclamationMark -> "EX"
+    MotiveMark -> "M"
     DependentMark -> "D"
     Comma -> "CO"
     Citation -> "CI"

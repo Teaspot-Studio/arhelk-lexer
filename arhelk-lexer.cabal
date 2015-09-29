@@ -17,12 +17,14 @@ library
   hs-source-dirs:      src
   exposed-modules:     Arhelk.Lexer.Token
                        Arhelk.Lexer.Grammar
+                       Arhelk.Lexer.Language
   build-depends:       base >= 4.7 && < 5
                      , text
                      , text-show
                      , parsec
   default-language:    Haskell2010
   extensions:          OverloadedStrings
+                       FlexibleContexts
 
 executable arhelk-lexer
   hs-source-dirs:      app

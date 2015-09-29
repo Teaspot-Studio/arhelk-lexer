@@ -3,7 +3,9 @@ module Arhelk.Lexer.Grammar(
   , arhelkLexerParse
   , arhelkLexerParseFile
   -- | Testing
+  , prop_emptyWord
   , prop_parseSingleWord
+  , prop_parseWords
   ) where 
 
 import Arhelk.Lexer.Language
@@ -91,7 +93,8 @@ arhelkLexerParseFile :: LexerLanguage -> FilePath -> IO (Either ParseError [Toke
 arhelkLexerParseFile l n = arhelkLexerParse l <$> T.readFile n 
 
 newtype SpaceText = SpaceText Text
-
+  deriving Show 
+  
 instance Arbitrary SpaceText where 
   arbitrary = SpaceText <$> do 
     NonNegative n <- arbitrary 
@@ -107,3 +110,13 @@ prop_parseSingleWord :: SomeWord -> Bool
 prop_parseSingleWord (SomeWord (Word t1)) = case arhelkLexerParse defaultLexer t1 of 
   Right [Word t2] -> t1 == t2
   _ -> False
+
+prop_parseWords :: [SomeWord] -> SpaceText -> Bool
+prop_parseWords ws (SpaceText spaces) = case arhelkLexerParse defaultLexer str of 
+  Right ws2 -> let
+    ws2' = fmap (\(Word t) -> t) ws2
+    in ws1 == ws2'
+  _ -> False
+  where 
+    str = T.intercalate (" " <> spaces) $ (\(SomeWord (Word t)) -> t) <$> ws
+    ws1 = (\(SomeWord (Word t)) -> t) <$> ws

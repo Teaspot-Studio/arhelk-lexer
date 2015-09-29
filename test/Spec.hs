@@ -5,5 +5,7 @@ import Test.QuickCheck.Instances
 
 main :: IO ()
 main = defaultMainWithOpts [
-    testProperty "single word" prop_parseSingleWord 
+    testProperty "empty word" prop_emptyWord
+  , testProperty "single word" prop_parseSingleWord 
+  , testProperty "word list" prop_parseWords
   ] mempty

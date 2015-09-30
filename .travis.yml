@@ -5,10 +5,8 @@ cache:
 
 addons:
   apt:
-    sources:
-    - debian-sid
     packages:
-    - gmp-dev
+    - libgmp-dev
     
 before_install:
   # stack

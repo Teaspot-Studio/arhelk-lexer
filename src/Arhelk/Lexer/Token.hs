@@ -3,6 +3,7 @@ module Arhelk.Lexer.Token(
   -- | Testing
   , SomeWord(..)
   , SomePunctuation(..)
+  , SomeWordWithPos(..)
   ) where
 
 import Data.Maybe 
@@ -96,11 +97,12 @@ instance Arbitrary SomeWord where
   arbitrary = SomeWord . Word <$> suchThat arbitrary cond
     where 
       cond :: Text -> Bool
-      cond a = not (T.null a) && and ((not . (a `contains`)) <$> spaces ++ punctuation)
+      cond a = T.length a > 0 && and ((not . (a `contains`)) <$> spaces ++ punctuation)
 
       contains :: Text -> Char -> Bool
       contains t c = isJust $ T.find (== c) t
 
+-- | Some non-empty word withot punctuation
 data SomePunctuation = SomePunctuation Char Token
 
 instance Show SomePunctuation where 
@@ -109,3 +111,12 @@ instance Show SomePunctuation where
 instance Arbitrary SomePunctuation where
   arbitrary = SomePunctuation <$> elements punctuation <*> elements punctuationTokens
 
+-- | Word with position from [1 .. length of word]
+data SomeWordWithPos = SomeWordWithPos Int Token 
+  deriving Show 
+
+instance Arbitrary SomeWordWithPos where
+  arbitrary = do 
+    SomeWord (Word t) <- arbitrary
+    i <- suchThat arbitrary (\i -> i <= T.length t && i > 0)
+    return $ SomeWordWithPos i (Word t)

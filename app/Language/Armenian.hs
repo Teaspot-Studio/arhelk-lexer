@@ -14,12 +14,9 @@ armenianLanguage = defaultLexer {
       , (char '․' <|> char '.') >> return Citation
       , char '՝' >> return DependentMark
       ] 
-      ++ inwords
-  , lexerInwordMarks = inwords
-  }
-  where
-    inwords = [
+  , lexerInwordMarks = [
         char '՞' >> return QuestionMark
       , char '՜' >> return ExclamationMark
       , char '՛' >> return MotiveMark
       ]
+  }

@@ -12,6 +12,7 @@ before_install:
   - chmod a+x ./travis_long
 
 install:
+  - apt-get install libgmp
   - ./travis_long stack --no-terminal setup
   - ./travis_long stack --no-terminal test --only-snapshot
 

@@ -1,55 +1,60 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Main where
 
+import Arhelk.Lexer
 import Data.Text as T
-import Text.Parsec 
-
-import Arhelk.Lexer.Token
-import Arhelk.Lexer.Grammar
-import Arhelk.Lexer.Language
+import Data.Version 
+import Language
+import Options.Applicative.Simple
+import qualified Data.Text.IO as T
+import System.Exit 
 import TextShow 
 
-bibleArm :: Text
-bibleArm = "Ի սկզբանէ Աստուած ստեղծեց երկինքն ու երկիրը։ Երկիրն անձեւ ու անկազմ էր, խաւար էր տիրում անհունի վրայ, եւ Աստծու հոգին շրջում էր ջրերի վրայ։ Եւ Աստուած ասաց. «Թող լոյս լինի»։ Եւ լոյս եղաւ։ Աստուած տեսաւ, որ լոյսը լաւ է, եւ Աստուած լոյսը բաժանեց խաւարից։ Աստուած լոյսը կոչեց ցերեկ, իսկ խաւարը կոչեց գիշեր։ Եւ եղաւ երեկոյ, եւ եղաւ առաւօտ՝ օր առաջին։ Աստուած ասաց. «Թող տարածութիւն առաջանայ ջրերի միջեւ, եւ ջրերը թող բաժանուեն ջրերից»։ Եւ եղաւ այդպէս։ Աստուած ստեղծեց տարածութիւնը, որով Աստուած տարածութեան ներքեւում եղած ջրերը անջրպետեց տարածութեան վրայ եղած ջրերից։ ։։"
+-- | Runtime options to lexer tool
+data LexOptions = LexOptions {
+  language :: Text
+, inputFile :: Maybe FilePath
+, outputFile :: Maybe FilePath
+}
 
-bibleEsp :: Text 
-bibleEsp = "En la komenco Dio kreis la cxielon kaj la teron. Kaj la tero estis senforma kaj dezerta, kaj mallumo estis super la abismo; kaj la spirito de Dio sxvebis super la akvo. Kaj Dio diris: Estu lumo; kaj farigxis lumo. Kaj Dio vidis la lumon, ke gxi estas bona; kaj Dio apartigis la lumon de la mallumo. Kaj Dio nomis la lumon Tago, kaj la mallumon Li nomis Nokto. Kaj estis vespero, kaj estis mateno, unu tago."
-
-armenianLang :: LexerLanguage 
-armenianLang = defaultLexer {
-    lexerPunctuation = [
-        char '։' >> return EndSentence
-      , char ',' >> return Comma
-      , (char '․' <|> char '.') >> return Citation
-      , char '՝' >> return DependentMark
-      ] 
-      ++ inwords
-  , lexerInwordMarks = inwords
-  }
-  where
-    inwords = [
-        char '՞' >> return QuestionMark
-      , char '՜' >> return ExclamationMark
-      , char '՛' >> return MotiveMark
-      ]
-
-esperantoLang :: LexerLanguage
-esperantoLang = defaultLexer {
-    lexerPunctuation = [
-        char '.' >> return EndSentence
-      , char ',' >> return Comma 
-      , char ':' >> return Citation
-      , char ';' >> return Semicolon
-      , char '!' >> return ExclamationMark
-      , char '?' >> return QuestionMark
-      , (string "—" <|> string "--") >> return Dash
-      ]
-  }
+-- | Parser for runtime parameters for lexing command
+parseLexOptions :: Parser LexOptions 
+parseLexOptions = LexOptions
+  <$> (T.pack <$> strOption (long "language" <> help "Specify language that is used to parse input"))
+  <*> (nothing <$> strOption (long "input" <> short 'i' <> help "Input text file" <> value ""))
+  <*> (nothing <$> strOption (long "output" <> short 'o' <> help "Output text file" <> value ""))
+  where 
+    nothing t = if Prelude.null t then Nothing else Just t
 
 main :: IO ()
 main = do
-  let es = arhelkLexerParse armenianLang bibleArm
-  -- let es = arhelkLexerParse esperantoLang bibleEsp
-  case es of 
-    Left err -> print err
-    Right res -> putStrLn $ T.unpack $ T.unlines $ showt <$> res
+  ((), runCommand) <-
+    simpleOptions $(simpleVersion $ Version [0, 1, 0] [])
+      "Lexer for Arhelk project, splits input into tokens."
+      "" 
+      (pure ()) $ do
+        addCommand "lex" "Perform parsing input into tokens"
+          performLexing parseLexOptions
+        addCommand "languages" "Displays list of supported languages"
+          (const showLanguages) (pure ())
+  runCommand
+
+performLexing :: LexOptions -> IO ()
+performLexing LexOptions{..} = do
+  case lookup language bultinLanguages of 
+    Nothing -> do 
+      T.putStrLn $ "Error: Don't know language '" <> language <> "', list builtin languages with `arhelk-lexer languages` command."
+      exitFailure 
+    Just lang -> do 
+      input <- maybe T.getContents T.readFile inputFile 
+      let output = maybe T.putStr T.writeFile outputFile
+      case arhelkLexerParse lang input of 
+        Left err -> do 
+          T.putStrLn $ "Error: " <> T.pack (show err)
+          exitFailure
+        Right toks -> do 
+          output $ T.unlines $ showt <$> toks 
+          exitSuccess
+
+showLanguages :: IO ()
+showLanguages = T.putStr $ T.unlines $ fst <$> bultinLanguages

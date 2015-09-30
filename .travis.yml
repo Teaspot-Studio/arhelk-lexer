@@ -6,7 +6,7 @@ cache:
 addons:
   apt:
     sources:
-    - ubuntu-sdk-team
+    - debian-sid
     packages:
     - gmp-dev
     

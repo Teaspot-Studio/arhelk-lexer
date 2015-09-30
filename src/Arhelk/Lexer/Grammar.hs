@@ -6,8 +6,11 @@ module Arhelk.Lexer.Grammar(
   , prop_emptyWord
   , prop_parseSingleWord
   , prop_parseWords
+  , prop_punctuationSimple1
+  , prop_punctuationSimple2
   ) where 
 
+import Prelude as P 
 import Arhelk.Lexer.Language
 import Arhelk.Lexer.Token 
 import Control.Monad 
@@ -28,7 +31,7 @@ spaced = NoSpace
 
 -- | Concats and removes all space tokens
 concatSpaced :: [[SpacedToken]] -> [Token]
-concatSpaced = cutSpace . Prelude.concat 
+concatSpaced = cutSpace . P.concat 
   where 
     cutSpace [] = []
     cutSpace (NoSpace t : xs) = t : (cutSpace xs)
@@ -37,18 +40,22 @@ concatSpaced = cutSpace . Prelude.concat
 -- | Generic lexer that is customized with given language specification.
 -- The lexer cuts the input into words, detects punctuation and quotation (including nested quotes). 
 arhelkLexer :: LexerLanguage -> Parser [Token]
-arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spacing
+arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` many1 spacing
   where 
     punctuation = fmap spaced <$> lexerPunctuation
     inWords = fmap spaced <$> lexerInwordMarks
 
     someToken :: Parser [SpacedToken]
-    someToken = choice $ (many1 <$> punctuation) ++
-      (fmap (aglutted $ choice punctuation) [single <$> quotation, wordWith inWords])
+    someToken = choice $ punctuationTokens ++ quotationTokens ++ wordTokens
+      where
+        punctuationTokens, quotationTokens, wordTokens :: [Parser [SpacedToken]]
+        punctuationTokens = fmap P.concat  . aglutted (wordWith inWords) . many1 <$> punctuation
+        quotationTokens = [aglutted (choice punctuation) quotation]
+        wordTokens = [fmap P.concat $ aglutted (fmap single $ choice punctuation) $ wordWith inWords]
 
     wordWith :: [Parser SpacedToken] -> Parser [SpacedToken]
     wordWith ps = do 
-      w <- many (choice $ ps++[word])
+      w <- many1 (choice $ ps++[word])
       return $ supplantTokens w
 
     -- | Supplant non-word tokens within word tokens
@@ -75,13 +82,25 @@ arhelkLexer lang@(LexerLanguage {..}) = concatSpaced <$> someToken `sepBy` spaci
     quotation = NoSpace . Quotation <$> choice (mkQuot <$> lexerQuotation)
       where mkQuot (b, e) = between b e $ arhelkLexer lang
 
-    -- | Parser with followed tokens without spaces
-    aglutted aglutp p = do 
-      pres <- p 
-      gluts <- many aglutp 
-      return $ pres ++ gluts
+-- | Just turns elemen into list
+single :: a -> [a]
+single t = [t]
 
-    single t = [t]
+-- | Parser with followed tokens without spaces
+aglutted :: Parser a -> Parser a -> Parser [a]
+aglutted aglutp p = p `sepByEndWith1` aglutp
+
+-- | Same as sepByEnd but saves separators
+--sepByEndWith p sep = sepByEndWith1 p sep <|> return []
+-- | Same as sepByEnd1 but saves separators
+sepByEndWith1 :: Parser a -> Parser a -> Parser [a]
+sepByEndWith1 p sep = do 
+  x <- p 
+  xs <- many $ do 
+    s <- many1 sep
+    y <- optionMaybe p 
+    return $ maybe s ((s ++).single) y
+  return (x : P.concat xs)
 
 -- | Parses given input
 arhelkLexerParse :: LexerLanguage -> Text -> Either ParseError [Token]
@@ -103,11 +122,13 @@ instance Arbitrary SpaceText where
 prop_emptyWord :: SpaceText -> Bool 
 prop_emptyWord (SpaceText t) = case arhelkLexerParse defaultLexer t of 
   Right [] -> True
+  Left err -> error $ show err
   _ -> False
 
 prop_parseSingleWord :: SomeWord -> Bool
 prop_parseSingleWord (SomeWord (Word t1)) = case arhelkLexerParse defaultLexer t1 of 
   Right [Word t2] -> t1 == t2
+  Left err -> error $ show err
   _ -> False
 prop_parseSingleWord _ = True
 
@@ -116,7 +137,33 @@ prop_parseWords ws (SpaceText spacing) = case arhelkLexerParse defaultLexer str 
   Right ws2 -> let
     ws2' = fmap (\(Word t) -> t) ws2
     in ws1 == ws2'
-  _ -> False
+  Left err -> error $ show err
   where 
     str = T.intercalate (" " <> spacing) $ (\(SomeWord (Word t)) -> t) <$> ws
     ws1 = (\(SomeWord (Word t)) -> t) <$> ws
+
+prop_punctuationSimple1 :: SomeWord -> SomeWord -> SomePunctuation -> SpaceText -> Bool
+prop_punctuationSimple1 (SomeWord (Word t1)) (SomeWord (Word t2)) (SomePunctuation pchar pt) (SpaceText spacing) = 
+  case arhelkLexerParse lexer t of 
+    Right [Word t1', pt', Word t2'] -> t1' == t1 && t2' == t2 && pt' == pt
+    Left err -> error $ show err
+    _ -> False
+  where 
+    t = t1 <> spacing <> T.pack [pchar] <> spacing <> t2
+    lexer = defaultLexer {
+      lexerPunctuation = [char pchar >> return pt]
+    }
+prop_punctuationSimple1 _ _ _ _ = True
+
+prop_punctuationSimple2 :: SomePunctuation -> SomeWord -> Bool
+prop_punctuationSimple2 (SomePunctuation pchar pt) (SomeWord (Word t1)) =
+  case arhelkLexerParse lexer t of 
+    Right [pt', Word t1'] -> t1' == t1 && pt' == pt
+    Left err -> error $ show err
+    _ -> False
+  where 
+    t = T.pack [pchar] <> t1
+    lexer = defaultLexer {
+      lexerPunctuation = [char pchar >> return pt]
+    }
+prop_punctuationSimple2 _ _ = True

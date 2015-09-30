@@ -2,6 +2,7 @@ module Arhelk.Lexer.Token(
     Token(..)
   -- | Testing
   , SomeWord(..)
+  , SomePunctuation(..)
   ) where
 
 import Data.Maybe 
@@ -38,7 +39,22 @@ data Token =
   | Quotation [Token]
   -- | Direct speech region. Example '—'. 
   | DirectSpeech [Token]
-  deriving Show
+  deriving (Eq)
+
+instance Show Token where 
+  show tok = case tok of 
+    Word t -> "Word \"" <> T.unpack t <> "\""
+    EndSentence -> "EndSentence"
+    QuestionMark -> "QuestionMark"
+    ExclamationMark -> "ExclamationMark"
+    MotiveMark -> "MotiveMark"
+    DependentMark -> "DependentMark"
+    Comma -> "Comma"
+    Semicolon -> "Semicolon"
+    Citation -> "Citation"
+    Dash -> "Dash"
+    Quotation t -> "Quotation " <> show t
+    DirectSpeech t -> "DirectSpeech " <> show t
 
 instance TextShow Token where 
   showb tok = case tok of 
@@ -54,18 +70,42 @@ instance TextShow Token where
     Dash -> "DA"
     Quotation t -> "QS\n" <> unlinesB (showb <$> t) <> "QE"
     DirectSpeech t -> "DS\n" <> unlinesB (showb <$> t) <> "DE"
-    
+
+punctuation :: [Char]
+punctuation = "`~¡!@#$%^&*()-=_+<>|/?[]{}'\";:։․.,«»“”„“‘’‹›"
+
+spaces :: [Char]
+spaces = " \n\r\t"
+
+punctuationTokens :: [Token]
+punctuationTokens = [
+    EndSentence
+  , QuestionMark
+  , ExclamationMark
+  , MotiveMark
+  , DependentMark
+  , Comma
+  , Semicolon
+  , Citation
+  , Dash ]
+
 newtype SomeWord = SomeWord Token
-  deriving Show 
+  deriving Show
 
 instance Arbitrary SomeWord where 
   arbitrary = SomeWord . Word <$> suchThat arbitrary cond
     where 
       cond :: Text -> Bool
-      cond a = not (T.null a) && and ((not . (a `contains`)) <$> punctuation)
+      cond a = not (T.null a) && and ((not . (a `contains`)) <$> spaces ++ punctuation)
 
       contains :: Text -> Char -> Bool
       contains t c = isJust $ T.find (== c) t
 
-      punctuation :: [Char]
-      punctuation = " \n\t\r`~!@#$%^&*()-=_+<>|\\/?[]{}'\";:։․.,«»“”„“‘’‹›"
+data SomePunctuation = SomePunctuation Char Token
+
+instance Show SomePunctuation where 
+  show (SomePunctuation c t) = "SomePunctuation " <> [c] <> " " <> show t
+
+instance Arbitrary SomePunctuation where
+  arbitrary = SomePunctuation <$> elements punctuation <*> elements punctuationTokens
+

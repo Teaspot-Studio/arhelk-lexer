@@ -15,6 +15,6 @@ esperantoLanguage = defaultLexer {
       , char ';' >> return Semicolon
       , char '!' >> return ExclamationMark
       , char '?' >> return QuestionMark
-      , (string "—" <|> string "--") >> return Dash
+      , (string "—" <|> try (string "--") <|> string "-" ) >> return Dash
       ]
   }

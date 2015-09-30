@@ -29,7 +29,7 @@ parseLexOptions = LexOptions
 main :: IO ()
 main = do
   ((), runCommand) <-
-    simpleOptions $(simpleVersion $ Version [0, 1, 0] [])
+    simpleOptions $(simpleVersion $ Version [0, 2, 0, 0] [])
       "Lexer for Arhelk project, splits input into tokens."
       "" 
       (pure ()) $ do

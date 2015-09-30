@@ -6,7 +6,7 @@ cache:
 addons:
   apt:
     packages:
-    - gmp
+    - gmp-devel
     
 before_install:
   # stack

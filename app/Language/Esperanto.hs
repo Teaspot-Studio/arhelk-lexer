@@ -6,7 +6,7 @@ import Arhelk.Lexer
 import Text.Parsec
 
 -- | Definition for Esperanto language lexer
-esperantoLanguage :: LexerLanguage
+esperantoLanguage :: LexerLanguage ()
 esperantoLanguage = defaultLexer {
     lexerPunctuation = [
         char '.' >> return EndSentence

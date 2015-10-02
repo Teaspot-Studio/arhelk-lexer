@@ -31,7 +31,9 @@ library
   default-extensions:  OverloadedStrings
                        FlexibleContexts
                        RecordWildCards
-
+                       ScopedTypeVariables
+                       TypeFamilies
+                       
 executable arhelk-lexer
   hs-source-dirs:      app
   main-is:             Main.hs

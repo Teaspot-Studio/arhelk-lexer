@@ -45,7 +45,7 @@ performLexing LexOptions{..} = do
     Nothing -> do 
       T.putStrLn $ "Error: Don't know language '" <> language <> "', list builtin languages with `arhelk-lexer languages` command."
       exitFailure 
-    Just lang -> do 
+    Just (SomeLexerLanguage lang) -> do 
       input <- maybe T.getContents T.readFile inputFile 
       let output = maybe T.putStr T.writeFile outputFile
       case arhelkLexerParse lang input of 

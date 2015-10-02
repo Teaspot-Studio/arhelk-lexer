@@ -1,4 +1,4 @@
-import Arhelk.Lexer.Grammar
+import Test.Arhelk.Lexer.Grammar
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 

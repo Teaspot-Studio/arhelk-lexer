@@ -9,6 +9,7 @@ import Arhelk.Lexer
 import Data.Text 
 import Language.Armenian as X 
 import Language.Esperanto as X 
+import Language.Russian as X 
 import TextShow
 
 data SomeLexerLanguage = forall a . (Show a, TextShow a) => 
@@ -19,4 +20,5 @@ bultinLanguages :: [(Text, SomeLexerLanguage)]
 bultinLanguages = [
     ("Armenian", SomeLexerLanguage armenianLanguage)
   , ("Esperanto", SomeLexerLanguage esperantoLanguage)
+  , ("Russian", SomeLexerLanguage russianLanguage)
   ]

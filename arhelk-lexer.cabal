@@ -47,7 +47,8 @@ executable arhelk-lexer
   other-modules:       Language
                        Language.Armenian
                        Language.Esperanto
-
+                       Language.Russian
+                       
   default-extensions:  OverloadedStrings
                        RecordWildCards
 

@@ -41,21 +41,20 @@ main = do
   runCommand
 
 performLexing :: LexOptions -> IO ()
-performLexing LexOptions{..} = do
-  case lookup language bultinLanguages of
-    Nothing -> do
-      T.putStrLn $ "Error: Don't know language '" <> language <> "', list builtin languages with `arhelk-lexer languages` command."
-      exitFailure
-    Just (SomeLexerLanguage lang) -> do
-      input <- maybe T.getContents T.readFile inputFile
-      let output = maybe T.putStr T.writeFile outputFile
-      case arhelkLexerParse lang input of
-        Left err -> do
-          T.putStrLn $ "Error: " <> T.pack (show err)
-          exitFailure
-        Right toks -> do
-          output $ T.unlines $ showt <$> toks
-          exitSuccess
+performLexing LexOptions{..} = case lookup language bultinLanguages of
+  Nothing -> do
+    T.putStrLn $ "Error: Don't know language '" <> language <> "', list builtin languages with `arhelk-lexer languages` command."
+    exitFailure
+  Just (SomeLexerLanguage lang) -> do
+    input <- maybe T.getContents T.readFile inputFile
+    let output = maybe T.putStr T.writeFile outputFile
+    case arhelkLexerParse lang input of
+      Left err -> do
+        T.putStrLn $ "Error: " <> T.pack (show err)
+        exitFailure
+      Right toks -> do
+        output $ T.unlines $ showt <$> toks
+        exitSuccess
 
 showLanguages :: IO ()
 showLanguages = T.putStr $ T.unlines $ fst <$> bultinLanguages
